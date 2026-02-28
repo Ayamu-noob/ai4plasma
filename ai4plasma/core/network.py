@@ -783,6 +783,11 @@ class RelaxFNN(Network):
         Creates learnable parameters for each layer, with the first two entries
         controlling identity vs. nonlinear mixing and the remaining entries
         selecting neuron counts.
+
+        gs shape: (layers, len(neuron_list) + 1), where:
+            - gs[i, 0] corresponds to the weight for the identity path in layer i.
+            - gs[i, 1] corresponds to the weight for the nonlinear path in layer i.
+            - gs[i, 2:] correspond to the weights for selecting neuron counts in layer i.
         """
         self.gs = Variable(1e-3 * torch.randn(self.layers, len(self.neuron_list)+1).to(DEVICE()), requires_grad=True)
         
@@ -790,6 +795,8 @@ class RelaxFNN(Network):
     
     def load_gs(self, arch_param):
         """Load architecture parameters from an external list.
+
+        self.arch_para is a list length 1, where the first element is the architecture parameter tensor gs.
         
         Parameters
         ----------
@@ -825,8 +832,9 @@ class RelaxFNN(Network):
         """Derive the discrete architecture from learned parameters.
         
         If the identity vs. nonlinear weights are close, retain a residual
-        connection and append the selected neuron count. Otherwise, select the
-        dominant option.
+        connection and append the selected neuron count. The residual connection
+        is denoted by '0+' followed by the selected neuron count.
+        Otherwise, select the dominant option.
 
         Parameters
         ----------
